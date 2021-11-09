@@ -136,11 +136,11 @@ class ServiceTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                Text('Service'),
-                Text(
-                  '0x${service.uuid.toString().toUpperCase().substring(4, 8)}',
-                )
-              ])),
+                    Text('Service'),
+                    Text(
+                      '0x${service.uuid.toString().toUpperCase().substring(4, 8)}',
+                    )
+                  ])),
           Column(children: characteristicTiles)
         ],
       );
@@ -148,7 +148,7 @@ class ServiceTile extends StatelessWidget {
       return ListTile(
         title: Text('Service'),
         subtitle:
-            Text('0x${service.uuid.toString().toUpperCase().substring(4, 8)}'),
+        Text('0x${service.uuid.toString().toUpperCase().substring(4, 8)}'),
       );
     }
   }
@@ -165,11 +165,11 @@ class CharacteristicTile extends StatelessWidget {
 
   CharacteristicTile(
       {Key? key,
-      required this.characteristic,
-      // required this.descriptorTiles,
-      this.onReadPressed,
-      this.onWritePressed,
-      this.onNotificationPressed})
+        required this.characteristic,
+        // required this.descriptorTiles,
+        this.onReadPressed,
+        this.onWritePressed,
+        this.onNotificationPressed})
       : super(key: key);
 
   @override
@@ -270,22 +270,8 @@ class CharacteristicTile extends StatelessWidget {
             ),
             // characteristic.isNotifying
             //     ?
-            Column(
+            SingleChildScrollView(child:  Column(
               children: [
-                Container(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight: 300.0,
-                    ),
-                    child: TextField(
-                      decoration: const InputDecoration(
-                          border: OutlineInputBorder(), labelText: '接收資料'),
-                      controller: receiveController,
-                      readOnly: true,
-                      maxLines: null,
-                    ),
-                  ),
-                ),
                 Row(children: [
                   Expanded(
                     child: TextField(
@@ -297,41 +283,76 @@ class CharacteristicTile extends StatelessWidget {
                   ),
                   Expanded(
                     child: RaisedButton(
-                        child: Text('send'),
-                        onPressed: () async {
-                          try {
-                            List<int> textdata = [];
-                            textdata.addAll(HEX.decode(myController.text));
-                            textdata.add(0x0d);
-                            await characteristic.write(textdata);
+                      child: const Text('送出(常按以顯示特定指令)'),
+                      onPressed: () async {
+                        try {
+                          List<int> textdata = [];
+                          textdata.addAll(HEX.decode(myController.text));
+                          textdata.add(0x0d);
+                          await characteristic.write(textdata);
 
-                            print(textdata);
-                          } catch (e) {
-                            print(e.toString());
-                          }
-                        }),
+                          print(textdata);
+                        } catch (e) {
+                          print(e.toString());
+                        }
+                      }
+                      ,onLongPress: (){
+                      showDialog<void>(
+                        context: context,
+                        barrierDismissible: false,
+                        // user must tap button!
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                              title: const Text('請選擇指令'),
+                              content: SizedBox(
+                                  width: double.maxFinite,
+                                  child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: features.length,
+                                      itemBuilder: (context, index) {
+                                        return
+
+                                          Card(
+                                            child: ListTile(
+
+                                              title: Text(features[index]['codename']),
+                                              onTap: ()async{
+                                                await characteristic.write(features[index]['value']);
+                                                Navigator.pop(context);
+                                              },
+                                            ),
+                                          );
+                                      })));
+                        },
+                      );
+
+                    },
+                    ),
+
                     flex: 1,
                   )
                 ]),
-                GridView.builder(
-                  shrinkWrap: true,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, childAspectRatio: 2.5),
-                    itemCount: features.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return GestureDetector(
-                          child: Card(
-                              color: Colors.amber,
-                              child: Text(features[index]['codename'])),
-                          onTap: () async {
-                            await characteristic
-                                .write(features[index]['value']);
-                          });
-                    }),
+
+                Container(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight:300,
+                    ),
+                    child: TextField(
+                      decoration: const InputDecoration(
+                          border: OutlineInputBorder(), labelText: '接收資料'),
+                      controller: receiveController,
+                      readOnly: true,
+                      maxLines: null,
+                    ),
+                  ),
+                ),
+
 
               ],
-            )
+            ))
+
+
             // : Container()
           ],
         );
@@ -347,9 +368,9 @@ class DescriptorTile extends StatelessWidget {
 
   const DescriptorTile(
       {Key? key,
-      required this.descriptor,
-      this.onReadPressed,
-      this.onWritePressed})
+        required this.descriptor,
+        this.onReadPressed,
+        this.onWritePressed})
       : super(key: key);
 
   @override
