@@ -80,13 +80,13 @@ class FindDevicesScreen extends StatelessWidget {
                         if (snapshot.data ==
                             BluetoothDeviceState.connected) {
                           return RaisedButton(
-                            child: const Text('disconnect'),
+                            child: const Text('開啟控制板'),
                             onPressed: () {
-                              d.disconnect();
-                              // Navigator.of(context).push(
-                              //     MaterialPageRoute(
-                              //         builder: (context) =>
-                              //             DeviceScreen(device: d)));
+
+                              Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          DeviceScreen(device: d)));
 
                             } ,
                           );

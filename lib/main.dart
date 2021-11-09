@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nkust_ble/BLE_controlpanel.dart';
+import 'package:nkust_ble/scanpage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -65,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       //從登入push到第二個
                       context,
                       MaterialPageRoute(
-                          builder: (context) => ble_controlpanel()),
+                          builder: (context) => scanpage()),
                     );
                     break;
                   }

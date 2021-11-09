@@ -132,17 +132,15 @@ class ServiceTile extends StatelessWidget {
       return Column(
         children: [
           ListTile(
-            title: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
+              title: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                 Text('Service'),
                 Text(
                   '0x${service.uuid.toString().toUpperCase().substring(4, 8)}',
                 )
-              ]
-            )
-          ),
+              ])),
           Column(children: characteristicTiles)
         ],
       );
@@ -158,6 +156,7 @@ class ServiceTile extends StatelessWidget {
 
 class CharacteristicTile extends StatelessWidget {
   final BluetoothCharacteristic characteristic;
+
   // final List<DescriptorTile> descriptorTiles;
   final VoidCallback? onReadPressed;
   final VoidCallback? onWritePressed;
@@ -179,6 +178,32 @@ class CharacteristicTile extends StatelessWidget {
 
     final myController = TextEditingController();
     var receiveController = TextEditingController();
+    List<dynamic> features = [
+      {
+        'codename': '密碼',
+        'value': [0x31, 0x32, 0x0d]
+      },
+      {
+        'codename': '馬達啟動',
+        'value': [0x41, 0x0d]
+      },
+      {
+        'codename': '馬達中速',
+        'value': [0x53, 0x0d]
+      },
+      {
+        'codename': '馬達低速',
+        'value': [0x44, 0x0d]
+      },
+      {
+        'codename': '馬達停止',
+        'value': [0x50, 0x0d]
+      },
+      {
+        'codename': '時間',
+        'value': [0x54, 0x0d]
+      }
+    ];
     return StreamBuilder<List<int>>(
       stream: characteristic.value,
       initialData: characteristic.lastValue,
@@ -232,10 +257,7 @@ class CharacteristicTile extends StatelessWidget {
                     },
                   ),
                   IconButton(
-                    icon: Icon(
-
-
-                            Icons.sync,
+                    icon: Icon(Icons.sync,
                         color: Theme.of(context)
                             .iconTheme
                             .color
@@ -251,14 +273,12 @@ class CharacteristicTile extends StatelessWidget {
             Column(
               children: [
                 Container(
-                  child: new ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: 500.0,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 300.0,
                     ),
                     child: TextField(
-
                       decoration: const InputDecoration(
-
                           border: OutlineInputBorder(), labelText: '接收資料'),
                       controller: receiveController,
                       readOnly: true,
@@ -292,7 +312,24 @@ class CharacteristicTile extends StatelessWidget {
                         }),
                     flex: 1,
                   )
-                ])
+                ]),
+                GridView.builder(
+                  shrinkWrap: true,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, childAspectRatio: 2.5),
+                    itemCount: features.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return GestureDetector(
+                          child: Card(
+                              color: Colors.amber,
+                              child: Text(features[index]['codename'])),
+                          onTap: () async {
+                            await characteristic
+                                .write(features[index]['value']);
+                          });
+                    }),
+
               ],
             )
             // : Container()
