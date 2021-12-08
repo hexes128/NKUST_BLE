@@ -1,7 +1,7 @@
 // Copyright 2017, Paul DeMarco.
 // All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:hex/hex.dart';
@@ -14,7 +14,7 @@ class ScanResultTile extends StatelessWidget {
   final VoidCallback? onTap;
 
   Widget _buildTitle(BuildContext context) {
-    if (result.device.name.length > 0) {
+    if (result.device.name.isNotEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,12 +36,12 @@ class ScanResultTile extends StatelessWidget {
 
   Widget _buildAdvRow(BuildContext context, String title, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(title, style: Theme.of(context).textTheme.caption),
-          SizedBox(
+          const SizedBox(
             width: 12.0,
           ),
           Expanded(
@@ -93,7 +93,7 @@ class ScanResultTile extends StatelessWidget {
       title: _buildTitle(context),
       leading: Text(result.rssi.toString()),
       trailing: RaisedButton(
-        child: Text('CONNECT'),
+        child: const Text('CONNECT'),
         color: Colors.black,
         textColor: Colors.white,
         onPressed: (result.advertisementData.connectable) ? onTap : null,
@@ -128,7 +128,7 @@ class ServiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (characteristicTiles.length > 0) {
+    if (characteristicTiles.isNotEmpty) {
       return Column(
         children: [
           ListTile(
@@ -136,7 +136,7 @@ class ServiceTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Service'),
+                    const Text('Service'),
                     Text(
                       '0x${service.uuid.toString().toUpperCase().substring(4, 8)}',
                     )
@@ -146,7 +146,7 @@ class ServiceTile extends StatelessWidget {
       );
     } else {
       return ListTile(
-        title: Text('Service'),
+        title: const Text('Service'),
         subtitle:
         Text('0x${service.uuid.toString().toUpperCase().substring(4, 8)}'),
       );
@@ -163,7 +163,7 @@ class CharacteristicTile extends StatelessWidget {
 
   final VoidCallback? onNotificationPressed;
 
-  CharacteristicTile(
+  const CharacteristicTile(
       {Key? key,
         required this.characteristic,
         // required this.descriptorTiles,
@@ -209,14 +209,13 @@ class CharacteristicTile extends StatelessWidget {
       initialData: characteristic.lastValue,
       builder: (c, snapshot) {
         final value = snapshot.data;
+        String bar =utf8 .decode(value!);
         receiveController = TextEditingController(
             text: DateTime.now().toString() +
                 '\n' +
-                value.toString() +
-                '\n' +
                 '---------------------------------------------------------' +
                 '\n' +
-                receiveController.text +
+                bar +
                 '\n');
         return Column(
           children: [
@@ -226,14 +225,14 @@ class CharacteristicTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Characteristic'),
+                    const Text('Characteristic'),
                     Text(
                       '0x${characteristic.uuid.toString().toUpperCase().substring(4, 8)}',
                     )
                   ],
                 ),
                 subtitle: Text(value.toString()),
-                contentPadding: EdgeInsets.all(0.0),
+                contentPadding: const EdgeInsets.all(0.0),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -278,7 +277,7 @@ class CharacteristicTile extends StatelessWidget {
                         decoration: const InputDecoration(
                             border: OutlineInputBorder(), labelText: '傳送資料'),
                         controller: myController,
-                        style: TextStyle(height: 1, color: Colors.black)),
+                        style: const TextStyle(height: 1, color: Colors.black)),
                     flex: 4,
                   ),
                   Expanded(
@@ -380,7 +379,7 @@ class DescriptorTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Descriptor'),
+          const Text('Descriptor'),
           Text(
             '0x${descriptor.uuid.toString().toUpperCase().substring(4, 8)}',
           )
@@ -427,7 +426,7 @@ class AdapterStateTile extends StatelessWidget {
         title: Text(
           'Bluetooth adapter is ${state.toString().substring(15)}',
         ),
-        trailing: Icon(
+        trailing: const Icon(
           Icons.error,
         ),
       ),
