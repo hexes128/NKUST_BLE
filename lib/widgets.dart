@@ -1,6 +1,6 @@
-// Copyright 2017, Paul DeMarco.
-// All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
+import 'dart:async';
+
+import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -136,11 +136,11 @@ class ServiceTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const Text('Service'),
-                    Text(
-                      '0x${service.uuid.toString().toUpperCase().substring(4, 8)}',
-                    )
-                  ])),
+                const Text('Service'),
+                Text(
+                  '0x${service.uuid.toString().toUpperCase().substring(4, 8)}',
+                )
+              ])),
           Column(children: characteristicTiles)
         ],
       );
@@ -148,16 +148,15 @@ class ServiceTile extends StatelessWidget {
       return ListTile(
         title: const Text('Service'),
         subtitle:
-        Text('0x${service.uuid.toString().toUpperCase().substring(4, 8)}'),
+            Text('0x${service.uuid.toString().toUpperCase().substring(4, 8)}'),
       );
     }
   }
 }
 
-class CharacteristicTile extends StatelessWidget {
+class CharacteristicTile extends StatefulWidget {
   final BluetoothCharacteristic characteristic;
 
-  // final List<DescriptorTile> descriptorTiles;
   final VoidCallback? onReadPressed;
   final VoidCallback? onWritePressed;
 
@@ -165,19 +164,28 @@ class CharacteristicTile extends StatelessWidget {
 
   const CharacteristicTile(
       {Key? key,
-        required this.characteristic,
-        // required this.descriptorTiles,
-        this.onReadPressed,
-        this.onWritePressed,
-        this.onNotificationPressed})
+      required this.characteristic,
+      // required this.descriptorTiles,
+      this.onReadPressed,
+      this.onWritePressed,
+      this.onNotificationPressed})
       : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    characteristic.setNotifyValue(true);
+  State<StatefulWidget> createState() {
+    return CharacteristicTilestate();
+  }
+}
 
-    final myController = TextEditingController();
-    var receiveController = TextEditingController();
+class CharacteristicTilestate extends State<CharacteristicTile> {
+  final myController = TextEditingController();
+  var receiveController = TextEditingController();
+  List<btdata> receivelist = [];
+  var value = '';
+  late StreamSubscription<List<int>> streamSubscription;
+bool showcontrol =false;
+  @override
+  Widget build(BuildContext context) {
     List<dynamic> features = [
       {
         'codename': '密碼',
@@ -204,159 +212,188 @@ class CharacteristicTile extends StatelessWidget {
         'value': [0x54, 0x0d]
       }
     ];
-    return StreamBuilder<List<int>>(
-      stream: characteristic.value,
-      initialData: characteristic.lastValue,
-      builder: (c, snapshot) {
-        final value = snapshot.data;
-        String bar =utf8 .decode(value!);
-        receiveController = TextEditingController(
-            text: DateTime.now().toString() +
-                '\n' +
-                '---------------------------------------------------------' +
-                '\n' +
-                bar +
-                '\n');
-        return Column(
-          children: [
-            ExpansionTile(
-              title: ListTile(
-                title: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const Text('Characteristic'),
-                    Text(
-                      '0x${characteristic.uuid.toString().toUpperCase().substring(4, 8)}',
-                    )
-                  ],
-                ),
-                subtitle: Text(value.toString()),
-                contentPadding: const EdgeInsets.all(0.0),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  // IconButton(
-                  //   icon: Icon(
-                  //     Icons.file_download,
-                  //     color:
-                  //         Theme.of(context).iconTheme.color?.withOpacity(0.5),
-                  //   ),
-                  //   onPressed: onReadPressed,
-                  // ),
-                  IconButton(
-                    icon: Icon(Icons.delete,
-                        color: Theme.of(context)
-                            .iconTheme
-                            .color
-                            ?.withOpacity(0.5)),
-                    onPressed: () {
-                      receiveController.clear();
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.sync,
-                        color: Theme.of(context)
-                            .iconTheme
-                            .color
-                            ?.withOpacity(0.5)),
-                    onPressed: onNotificationPressed,
-                  )
-                ],
-              ),
-              // children: descriptorTiles,
-            ),
-            // characteristic.isNotifying
-            //     ?
-            SingleChildScrollView(child:  Column(
-              children: [
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                        decoration: const InputDecoration(
-                            border: OutlineInputBorder(), labelText: '傳送資料'),
-                        controller: myController,
-                        style: const TextStyle(height: 1, color: Colors.black)),
-                    flex: 4,
-                  ),
-                  Expanded(
-                    child: RaisedButton(
-                      child: const Text('送出(常按以顯示特定指令)'),
-                      onPressed: () async {
-                        try {
-                          List<int> textdata = [];
-                          textdata.addAll(HEX.decode(myController.text));
-                          textdata.add(0x0d);
-                          await characteristic.write(textdata);
 
-                          print(textdata);
-                        } catch (e) {
-                          print(e.toString());
-                        }
-                      }
-                      ,onLongPress: (){
-                      showDialog<void>(
-                        context: context,
-                        barrierDismissible: false,
-                        // user must tap button!
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                              title: const Text('請選擇指令'),
-                              content: SizedBox(
-                                  width: double.maxFinite,
-                                  child: ListView.builder(
-                                      shrinkWrap: true,
-                                      itemCount: features.length,
-                                      itemBuilder: (context, index) {
-                                        return
-
-                                          Card(
-                                            child: ListTile(
-
-                                              title: Text(features[index]['codename']),
-                                              onTap: ()async{
-                                                await characteristic.write(features[index]['value']);
-                                                Navigator.pop(context);
-                                              },
-                                            ),
-                                          );
-                                      })));
-                        },
-                      );
-
-                    },
-                    ),
-
-                    flex: 1,
-                  )
-                ]),
-
-                Container(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight:300,
-                    ),
-                    child: TextField(
-                      decoration: const InputDecoration(
-                          border: OutlineInputBorder(), labelText: '接收資料'),
-                      controller: receiveController,
-                      readOnly: true,
-                      maxLines: null,
-                    ),
-                  ),
-                ),
-
-
+    return
+      Column(
+      children: [
+        ListTile(
+          title: ListTile(
+            title: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text('Characteristic'),
+                Text(
+                  '0x${widget.characteristic.uuid.toString().toUpperCase().substring(4, 8)}',
+                )
               ],
-            ))
+            ),
+            subtitle: Text(value.toString()),
+            contentPadding: const EdgeInsets.all(0.0),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              IconButton(
+                icon: Icon(Icons.delete,
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
+                onPressed: () {
+                  setState(() {
+                    receivelist.clear();
+                  });
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.sync,
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
+                onPressed: widget.onNotificationPressed,
+              )
+            ],
+          ),
+        ),
 
+        Column(
+          children: [
+            Row(children: [
+              Expanded(
+                child: TextField(
+                    decoration: const InputDecoration(
+                        border: OutlineInputBorder(), labelText: '傳送資料'),
+                    controller: myController,
+                    style: const TextStyle(height: 1, color: Colors.black)),
+                flex: 4,
+              ),
+              Expanded(
+                child: RaisedButton(
+                  child: const Text('送出(常按以顯示特定指令)'),
+                  onPressed: () async {
+                    try {
+                      List<int> textdata = [];
+                      textdata.addAll(HEX.decode(myController.text));
+                      textdata.add(0x0d);
+                      await widget.characteristic.write(textdata);
 
-            // : Container()
+                      print(textdata);
+                    } catch (e) {
+                      print(e.toString());
+                    }
+                  },
+                  onLongPress: () {
+                    showDialog<void>(
+                      context: context,
+                      barrierDismissible: false,
+                      // user must tap button!
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                            title: const Text('請選擇指令'),
+                            content: SizedBox(
+                                width: double.maxFinite,
+                                child: ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: features.length,
+                                    itemBuilder: (context, index) {
+                                      return Card(
+                                        child: ListTile(
+                                          title:
+                                              Text(features[index]['codename']),
+                                          onTap: () async {
+                                            await widget.characteristic.write(
+                                                features[index]['value']);
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      );
+                                    })));
+                      },
+                    );
+                  },
+                ),
+                flex: 1,
+              )
+            ]),
+            SingleChildScrollView(
+              child: SizedBox(
+                height: 600,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: receivelist.map((e) {
+                    return Card(
+                      child: ListTile(
+                        title: Text(e.receivedata),
+                        subtitle: Text(e.receivetime),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete,
+                              color: Theme.of(context)
+                                  .iconTheme
+                                  .color
+                                  ?.withOpacity(0.5)),
+                          onPressed: () {
+                            setState(() {
+                              receivelist.remove(e);
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            )
+
+            // ConstrainedBox(
+            //     constraints: const BoxConstraints(
+            //       maxHeight: 300,
+            //     ),
+            //     child:
+            //
+            //
+            //     // TextField(
+            //     //   decoration: const InputDecoration(
+            //     //       border: OutlineInputBorder(), labelText: '接收資料'),
+            //     //   controller: receiveController,
+            //     //   readOnly: true,
+            //     //   maxLines: null,
+            //     // ),
+            //     ),
           ],
-        );
-      },
+        )
+
+        // : Container()
+      ],
     );
+  }
+
+  @override
+  void dispose() {
+    if (!streamSubscription.isPaused) {
+      streamSubscription.cancel();
+    }
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.characteristic.setNotifyValue(true);
+
+    streamSubscription = widget.characteristic.value.listen((event) {
+      if (event.isNotEmpty) {
+        setState(() {
+          receivelist.insert(0, btdata(latin1.decode(event).trim()));
+          // receivelist.add(btdata(latin1.decode(event).trim()));
+
+          // String bar =latin1 .decode(event).trim();
+          //
+          // receiveController.text= DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now())  +
+          //     '\n' +
+          //
+          //     bar +'\n'+
+          //     '---------------------------------------------------------' +
+          //
+          //     '\n'+receiveController.text;
+        });
+      }
+    });
   }
 }
 
@@ -367,9 +404,9 @@ class DescriptorTile extends StatelessWidget {
 
   const DescriptorTile(
       {Key? key,
-        required this.descriptor,
-        this.onReadPressed,
-        this.onWritePressed})
+      required this.descriptor,
+      this.onReadPressed,
+      this.onWritePressed})
       : super(key: key);
 
   @override
@@ -432,4 +469,11 @@ class AdapterStateTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class btdata {
+  String receivetime = DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now());
+  String receivedata;
+
+  btdata(this.receivedata);
 }
