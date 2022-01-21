@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nkust_ble/BLE_controlpanel.dart';
 import 'package:nkust_ble/scanpage.dart';
+import 'package:nkust_ble/userinfo.dart';
+import 'global.dart' as GV;
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +17,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'WNMC_BLE',
       theme: ThemeData(
-
         primarySwatch: Colors.blue,
       ),
       home: const MyHomePage(title: '國立高雄科技大學 電機工程系'),
@@ -26,8 +27,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
 
-
-
   final String title;
 
   @override
@@ -35,42 +34,59 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
- var arr=    ['藍芽MCU儀表板', '個人資料','關於本APP','...'];
+
+  Future<dynamic>callapi ()async{
+
+
+
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body:
-
-
-      GridView.builder(
+      body: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2, childAspectRatio: 2.5),
-          itemCount: arr.length,
+          itemCount: GV.arr.length,
           itemBuilder: (BuildContext context, int index) {
             return GestureDetector(
               child: Card(
                 color: Colors.amber,
-                child: Center(child: Text(arr[index])),
+                child: Center(child: Text(GV.arr[index])),
               ),
               onTap: () {
-                switch (arr[index]) {
-                  case('藍芽MCU儀表板'):{
+                switch (index) {
+                  case (4):
+                    {
+                      Navigator.push(
+                        //從登入push到第二個
+                        context,
+                        MaterialPageRoute(builder: (context) => userinfo()),
+                      );
+                      break;
+                    }
+                  case (5):
+                    {
+
+                      break;
+                    }
+                  default:{
+                    GV.receivemode = index;
                     Navigator.push(
                       //從登入push到第二個
                       context,
-                      MaterialPageRoute(
-                          builder: (context) => scanpage()),
+                      MaterialPageRoute(builder: (context) => scanpage()),
                     );
                     break;
                   }
                 }
+
+
               },
             );
           }),

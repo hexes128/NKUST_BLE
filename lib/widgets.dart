@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:hex/hex.dart';
-
+import 'global.dart' as GV;
 class ScanResultTile extends StatelessWidget {
   const ScanResultTile({Key? key, required this.result, this.onTap})
       : super(key: key);
@@ -183,7 +183,8 @@ class CharacteristicTilestate extends State<CharacteristicTile> {
   List<btdata> receivelist = [];
   var value = '';
   late StreamSubscription<List<int>> streamSubscription;
-bool showcontrol =false;
+  bool showcontrol = false;
+
   @override
   Widget build(BuildContext context) {
     List<dynamic> features = [
@@ -213,48 +214,29 @@ bool showcontrol =false;
       }
     ];
 
-    return
-      Column(
+    return Column(
       children: [
-        ListTile(
-          title: ListTile(
-            title: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text('Characteristic'),
-                Text(
-                  '0x${widget.characteristic.uuid.toString().toUpperCase().substring(4, 8)}',
-                )
-              ],
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextButton(
+        child: const Text('刪除歷史資料'),
+              onPressed: () {
+                setState(() {
+                  receivelist.clear();
+                });
+              },
             ),
-            subtitle: Text(value.toString()),
-            contentPadding: const EdgeInsets.all(0.0),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              IconButton(
-                icon: Icon(Icons.delete,
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
-                onPressed: () {
-                  setState(() {
-                    receivelist.clear();
-                  });
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.sync,
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.5)),
-                onPressed: widget.onNotificationPressed,
-              )
-            ],
-          ),
+            TextButton(
+           child: const Text('啟用特徵通知'),
+              onPressed: widget.onNotificationPressed,
+            )
+          ],
         ),
 
         Column(
           children: [
-            Row(children: [
+      GV.receivemode==0?      Row(children: [
               Expanded(
                 child: TextField(
                     decoration: const InputDecoration(
@@ -310,16 +292,65 @@ bool showcontrol =false;
                 ),
                 flex: 1,
               )
-            ]),
+            ]):Container(),
             SingleChildScrollView(
               child: SizedBox(
                 height: 600,
                 child: ListView(
                   shrinkWrap: true,
                   children: receivelist.map((e) {
+                    String transdata='';
+                    switch(GV.receivemode){
+                      case(0):{
+                       transdata = latin1.decode(e.receivedata).trim();
+                        break;}
+                      case(1):{
+                        try{
+                          double c = (e.receivedata[0]-32)*5/9;
+                          transdata = e.receivedata[0].toString()+'f , '+c.toStringAsFixed(2)+'c';
+                        }
+              catch(e){
+                transdata='格式錯誤 無法轉換';
+              }
+
+                        break;}
+                      case(2):{
+                        try{
+                          double out =(e.receivedata[0]*65536+e.receivedata[1]*256+e.receivedata[2]*16).toDouble();
+                          double    tout = (out-1677722)*25/13421772;
+
+
+
+
+                          transdata =tout.toStringAsFixed(3)+'PSI';
+                        }
+                        catch(e){
+                          transdata='格式錯誤 無法轉換';
+                        }
+
+
+                        break;}
+                      case(3):{
+                        try{
+                          double pout =(e.receivedata[0]*65536+e.receivedata[1]*256+e.receivedata[2]*16).toDouble();
+                      double    Pbar = (pout-1677722)*10/13421772;
+
+                          double tout =(e.receivedata[3]*65536+e.receivedata[4]*256+e.receivedata[5]*16).toDouble();
+                          double    toc = (tout-1677722)*200/13421772-50;
+
+
+             transdata =Pbar.toStringAsFixed(3)+'Bar ,'+toc.toStringAsFixed(3)+'oC';
+                        }
+                        catch(e){
+                          transdata='格式錯誤 無法轉換';
+                        }
+
+                        break;}
+                    }
+
                     return Card(
                       child: ListTile(
-                        title: Text(e.receivedata),
+                        title: Text('${e.receivedata}\n$transdata '),
                         subtitle: Text(e.receivetime),
                         trailing: IconButton(
                           icon: Icon(Icons.delete,
@@ -340,21 +371,6 @@ bool showcontrol =false;
               ),
             )
 
-            // ConstrainedBox(
-            //     constraints: const BoxConstraints(
-            //       maxHeight: 300,
-            //     ),
-            //     child:
-            //
-            //
-            //     // TextField(
-            //     //   decoration: const InputDecoration(
-            //     //       border: OutlineInputBorder(), labelText: '接收資料'),
-            //     //   controller: receiveController,
-            //     //   readOnly: true,
-            //     //   maxLines: null,
-            //     // ),
-            //     ),
           ],
         )
 
@@ -374,23 +390,21 @@ bool showcontrol =false;
   @override
   void initState() {
     super.initState();
-    widget.characteristic.setNotifyValue(true);
+    if (!widget.characteristic.isNotifying) {
+      () async {
+        widget.characteristic.setNotifyValue(true);
+      };
+    }
 
     streamSubscription = widget.characteristic.value.listen((event) {
       if (event.isNotEmpty) {
         setState(() {
-          receivelist.insert(0, btdata(latin1.decode(event).trim()));
-          // receivelist.add(btdata(latin1.decode(event).trim()));
-
-          // String bar =latin1 .decode(event).trim();
-          //
-          // receiveController.text= DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now())  +
-          //     '\n' +
-          //
-          //     bar +'\n'+
-          //     '---------------------------------------------------------' +
-          //
-          //     '\n'+receiveController.text;
+          double c =(event[0]-32).toDouble()*5/9;
+          if(receivelist.length==250){
+            receivelist.clear();
+          }
+          receivelist.insert(0, btdata(event));
+          // receivelist.insert(0, btdata(latin1.decode(event).trim()));
         });
       }
     });
@@ -471,9 +485,28 @@ class AdapterStateTile extends StatelessWidget {
   }
 }
 
+// class controllpanel extends StatefulWidget {
+//   BluetoothService service;
+//
+//   controllpanel({Key? key, required this.service}) : super(key: key);
+//
+//   @override
+//   State<StatefulWidget> createState() {
+//     return controlstate();
+//   }
+// }
+//
+// class controlstate extends State<controllpanel> {
+//   @override
+//   Widget build(BuildContext context) {
+//     // TODO: implement build
+//     throw UnimplementedError();
+//   }
+// }
+
 class btdata {
   String receivetime = DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now());
-  String receivedata;
+  List<int> receivedata;
 
   btdata(this.receivedata);
 }

@@ -38,7 +38,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  http: ^0.13.3
+  flutter_secure_storage: ^5.0.2
   hex: ^0.2.0
   flutter_lints: ^1.0.0
   flutter_blue: ^0.8.0
