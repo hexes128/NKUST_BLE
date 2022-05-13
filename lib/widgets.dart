@@ -215,21 +215,22 @@ class CharacteristicTilestate extends State<CharacteristicTile> {
                  Row(children: [
                     Expanded(
                       child: TextField(
-                          onChanged: (text) {
-
-                    String tmp = text.replaceAll(' ', '');
-                    String output='';
-                      for(int i=0;i<tmp.length;i++){
-                        if(i.isEven&&i>0){
-                          output=output+'  ';
-                        }
-                        output=output+tmp[i];
-
-                      }
-                     myController.text=output;
-                            myController.selection = TextSelection.fromPosition(TextPosition(offset: myController.text.length));
-
-                          },
+autofocus: true,
+                    //       onChanged: (text) {
+                    //
+                    // String tmp = text.replaceAll(' ', '');
+                    // String output='';
+                    //   for(int i=0;i<tmp.length;i++){
+                    //     if(i.isEven&&i>0){
+                    //       output=output+'  ';
+                    //     }
+                    //     output=output+tmp[i];
+                    //
+                    //   }
+                    //  myController.text=output;
+                    //         myController.selection = TextSelection.fromPosition(TextPosition(offset: myController.text.length));
+                    //
+                    //       },
                           inputFormatters: [
                             FilteringTextInputFormatter.allow(
                                 RegExp('[a-zA-Z 0-9]')),
