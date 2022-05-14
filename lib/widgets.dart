@@ -211,10 +211,12 @@ class CharacteristicTilestate extends State<CharacteristicTile> {
 
         Column(
           children: [
-
+GV.receivemode==0?
                  Row(children: [
                     Expanded(
-                      child: TextField(
+                      child:
+
+                      TextField(
 autofocus: true,
                     //       onChanged: (text) {
                     //
@@ -241,7 +243,9 @@ autofocus: true,
                               border: OutlineInputBorder(), labelText: '傳送資料'),
                           controller: myController,
                           style:
-                              const TextStyle(height: 1, color: Colors.black)),
+                              const TextStyle(height: 1,
+                                  fontSize: 25,
+                                  color: Colors.black)),
                       flex: 4,
                     ),
                     Expanded(
@@ -263,7 +267,7 @@ autofocus: true,
                       ),
                       flex: 1,
                     )
-                  ]),
+                  ]):Container(),
 
             SingleChildScrollView(
               child: SizedBox(
