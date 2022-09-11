@@ -3,6 +3,7 @@ import 'package:nkust_ble/BLE_controlpanel.dart';
 import 'package:nkust_ble/scanpage.dart';
 import 'package:nkust_ble/userinfo.dart';
 import 'global.dart' as GV;
+import 'multipleterminal.dart';
 
 void main() {
   runApp(const MyApp());
@@ -61,6 +62,18 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               onTap: () {
                 switch (index) {
+                  case(0):{
+                    {
+                      Navigator.push(
+                        //從登入push到第二個
+                        context,
+                        MaterialPageRoute(builder: (context) => terminal()),
+                      );
+                      break;
+                    }
+                    break;
+
+                  }
                   case (4):
                     {
                       Navigator.push(
