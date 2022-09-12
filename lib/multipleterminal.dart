@@ -17,164 +17,166 @@ class terminal extends StatefulWidget {
 class terminalstate extends State<terminal> with TickerProviderStateMixin {
   TabController? tabController;
   int deviceindex = 0;
-  BluetoothDevice? device;
-
-  Map<String, StreamSubscription> Subscriptions = {};
-  Map<String, List<List<int>>> btdata = {};
 
 
 
+Map<BluetoothCharacteristic,List<List<int>> >btdata={};
+  Future<void> discoverservice(BluetoothDevice device) async {
+    await device.discoverServices();
+  }
 
+  Future<void> setnotify(BluetoothCharacteristic chara) async {
+    try {
+      if(!chara.isNotifying){
+        await chara.setNotifyValue(true);
+   btdata[chara]=[];
+      }
 
+    } catch (e) {
+      print(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<BluetoothDevice>>(
-        stream: Stream.periodic(const Duration(seconds: 1))
-            .asyncMap((_) => FlutterBlue.instance.connectedDevices),
+    return
+
+      FutureBuilder<List<BluetoothDevice>>(
+        future:FlutterBlue.instance.connectedDevices,
+          // Stream.periodic(const Duration(seconds: 1)).asyncMap((_) => FlutterBlue.instance.connectedDevices),
         initialData: [],
         builder: (c, snapdevice) {
           if (snapdevice.data!.isNotEmpty) {
-            try {
-              tabController = TabController(
-                  length: snapdevice.data!.length,
-                  vsync: this,
-                  initialIndex: deviceindex);
-              device = snapdevice.data![deviceindex];
-              tabController!.addListener(() {
-                if (tabController!.indexIsChanging) {
-                  setState(() {
-                    deviceindex = tabController!.index;
-                  });
-                }
-              });
-            } catch (e) {}
 
-            return Scaffold(
-                appBar: AppBar(
-                  title: const Text('Terminal'),
-                  actions: [
-                    IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            //從登入push到第二個
-                            context,
-                            MaterialPageRoute(builder: (context) => scanpage()),
-                          ).then((value) => setState(() {
-                            deviceindex=0;
-
-                          }));
-                        },
-                        icon: const Icon(Icons.search)),
-                  ],
-                ),
-                body: SingleChildScrollView(
-                  child: Column(
-                    children: <Widget>[
-                      StreamBuilder<BluetoothDeviceState>(
-                          stream: device!.state,
-                          initialData: BluetoothDeviceState.connecting,
-                          builder: (c, snapstate) {
-                            switch (snapstate.data) {
-                              case (BluetoothDeviceState.connected):
-                                {
-                                  discoverservice(device);
-
-                                  break;
-                                }
-                              case (BluetoothDeviceState.disconnected):
-                                {
-                                  if(btdata.keys.contains(device!.id.id)){
-                                    btdata.remove(device!.id.id);
-                                    Subscriptions[device!.id.id]!.cancel();
-                                    Subscriptions.remove(device!.id.id);
-                                  }
-
-
-                                  break;
-                                }
-                            }
-
-                            return Column(children: [
-                              ListTile(
-                                  leading: Icon(snapstate.data ==
-                                          BluetoothDeviceState.connected
-                                      ? Icons.bluetooth_connected
-                                      : Icons.bluetooth_disabled),
-                                  title: Text(device!.name +
-                                      '${snapstate.data.toString().split('.')[1]}.'),
-                                  subtitle: Text('${device!.id}'),
-                                  trailing: snapstate.data ==
-                                          BluetoothDeviceState.connected
-                                      ? TextButton(
-                                          onPressed: () async {
-                                            await device!.disconnect();
-                                            setState(() {});
-                                          },
-                                          child: const Text('中斷連線'))
-                                      : TextButton(
-                                          onPressed: () async {
-                                            await device!.connect();
-                                          },
-                                          child: const Text('重新連線'))),
-                              btdata.keys.contains(device!.id.id)
-                                  ? SingleChildScrollView(
-                                      child: SizedBox(
-                                        height: 700,
-                                        child: ListView(
-                                          shrinkWrap: true,
-                                          children:
-                                              btdata[device!.id.id]!.map((e) {
-                                            return Card(
-                                              child: ListTile(
-                                                title: Text('$e'),
-                                                trailing: IconButton(
-                                                  icon: Icon(Icons.delete,
-                                                      color: Theme.of(context)
-                                                          .iconTheme
-                                                          .color
-                                                          ?.withOpacity(0.5)),
-                                                  onPressed: () {
-                                                    setState(() {});
-                                                  },
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ),
-                                    )
-                                  : Container()
-                            ]);
-                          }),
+            return
+              DefaultTabController(length: snapdevice.data!.length, child: Scaffold(
+                  appBar: AppBar(
+                    title: const Text('Terminal'),
+                    actions: [
+                      IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              //從登入push到第二個
+                              context,
+                              MaterialPageRoute(builder: (context) => scanpage()),
+                            ).then((value) => setState(() {
+                              deviceindex = 0;
+                            }));
+                          },
+                          icon: const Icon(Icons.search)),
                     ],
                   ),
-                ),
-                bottomNavigationBar: Material(
-                    color: Theme.of(context).primaryColor,
-                    child: TabBar(
-                        controller: tabController,
-                        indicatorColor: Colors.red,
-                        labelColor: Colors.black,
-                        unselectedLabelColor: Colors.white,
-                        isScrollable: true,
-                        tabs: snapdevice.data!
-                            .map(
-                              (e) => SizedBox(
-                                child: Tab(
-                                  child: StreamBuilder<BluetoothDeviceState>(
-                                    stream: e.state,
-                                    initialData:
-                                        BluetoothDeviceState.connecting,
-                                    builder: (c, state) {
-                                      return Text(e.name +
-                                          '${state.data.toString().split('.')[1]}.');
-                                    },
-                                  ),
+                  body: TabBarView(
+
+                    children: snapdevice.data!
+                        .map(
+                          (device) {
+                      
+                            return
+                            SingleChildScrollView(
+                              child: Column(
+                                children: <Widget>[
+                                  StreamBuilder<BluetoothDeviceState>(
+                                      stream: device!.state,
+                                      initialData: BluetoothDeviceState.disconnecting,
+                                      builder: (c, snapstate) {
+                                        print(snapstate.data);
+
+                                        if(    snapstate.data == BluetoothDeviceState.connected ||snapstate.data == BluetoothDeviceState.disconnecting){
+                                          return Column(children: [
+                                            ListTile(
+                                              leading: Icon(snapstate.data == BluetoothDeviceState.connected ? Icons.bluetooth_connected : Icons.bluetooth_disabled),
+                                              title: Text(device!.name + '${snapstate.data.toString().split('.')[1]}.'),
+                                              subtitle: Text('${device!.id}'),
+                                            ),
+
+
+                                            StreamBuilder<List<BluetoothService>>(
+                                                stream: device.services,
+                                                initialData: [],
+                                                builder: (c, snapservice) {
+                                                  if (snapservice.data!.isNotEmpty) {
+
+
+                                                    if (btdata.keys.map((e) => e.deviceId.id).contains(device.id.id)) {
+                                                      BluetoothCharacteristic chara=btdata.keys.where((x) => x.deviceId.id==device.id.id).first;
+                                                      return StreamBuilder<List<int>>(
+                                                          stream:btdata.keys.where((x) => x.deviceId.id==device.id.id).first .value,
+                                                          initialData: [],
+                                                          builder: (c, snapvalue) {
+                                                            if(snapvalue.data!.isNotEmpty){
+                                                              btdata[chara]!.insert(0, snapvalue.data!);
+                                                            }
+
+                                                            return ListView(
+                                                              shrinkWrap: true,
+                                                              children:  btdata[chara]!
+                                                                  .map((e) => Card(
+                                                                child: ListTile(
+                                                                  title: Text('$e'),
+                                                                ),
+                                                              ))
+                                                                  .toList(),
+                                                            );
+                                                          });
+                                                    } else {
+                                                      BluetoothService service = snapservice.data!.singleWhere((e) => e.uuid.toString() == '0000ffe0-0000-1000-8000-00805f9b34fb');
+                                                      BluetoothCharacteristic chara = service.characteristics.singleWhere((e) => e.uuid.toString() == '0000ffe1-0000-1000-8000-00805f9b34fb');
+                                                      setnotify(chara);
+                                                      return Container();
+                                                    }
+
+                                                  } else {
+                                                    discoverservice(device);
+                                                    return Container();
+                                                  }
+                                                })
+
+                                          ]);
+                                        }
+                                        else if( snapstate.data == BluetoothDeviceState.disconnected){
+                                          btdata.removeWhere((key, value) => key.deviceId.id==device.id.id);
+                                          return Container();
+                                        }
+                                        else{
+                                          return Container();
+                                        }
+
+
+                                      }),
+                                ],
+                              ),
+                            );
+                            }
+
+                    )
+                        .toList(),
+                  ),
+
+                  bottomNavigationBar: Material(
+                      color: Theme.of(context).primaryColor,
+                      child: TabBar(
+
+                          indicatorColor: Colors.red,
+                          labelColor: Colors.black,
+                          unselectedLabelColor: Colors.white,
+                          isScrollable: true,
+                          tabs: snapdevice.data!
+                              .map(
+                                (e) => SizedBox(
+                              child: Tab(
+                                child: StreamBuilder<BluetoothDeviceState>(
+                                  stream: e.state,
+                                  initialData: BluetoothDeviceState.connecting,
+                                  builder: (c, state) {
+                                    return Text(e.name + '${state.data.toString().split('.')[1]}.');
+                                  },
                                 ),
                               ),
-                            )
-                            .toList())));
+                            ),
+                          )
+                              .toList()))));
+              ;
           } else {
             return Scaffold(
               appBar: AppBar(
@@ -187,8 +189,7 @@ class terminalstate extends State<terminal> with TickerProviderStateMixin {
                           context,
                           MaterialPageRoute(builder: (context) => scanpage()),
                         ).then((value) => setState(() {
-                          deviceindex=0;
-
+                              deviceindex = 0;
                             }));
                       },
                       icon: const Icon(Icons.search)),
@@ -209,31 +210,28 @@ class terminalstate extends State<terminal> with TickerProviderStateMixin {
         });
   }
 
-  Future<void> discoverservice(BluetoothDevice? device) async {
-    
-    if (!btdata.keys.contains(device!.id.id)) {
-      await device!.discoverServices().then((servicelist) async {
-        BluetoothService service = servicelist.singleWhere(
-            (e) => e.uuid.toString() == '0000ffe0-0000-1000-8000-00805f9b34fb');
-
-        BluetoothCharacteristic chara = service.characteristics.singleWhere(
-            (e) => e.uuid.toString() == '0000ffe1-0000-1000-8000-00805f9b34fb');
-        try {
-          await chara.setNotifyValue(true);
-          btdata[device.id.id] = [];
-          if (!Subscriptions.keys.contains(device.id.id)) {
-            Subscriptions[device!.id.id] = chara.value.listen((event) {
-              if (event.isNotEmpty) {
-                setState(() {
-                  btdata[device!.id.id]!.insert(0, event);
-                });
-              }
-            });
-          }
-        } catch (e) {}
-      });
-    }
-  }
+  // Future<void> discoverservice(BluetoothDevice? device) async {
+  //   if (!btdata.keys.contains(device!.id.id)) {
+  //     await device!.discoverServices().then((servicelist) async {
+  //       BluetoothService service = servicelist.singleWhere((e) => e.uuid.toString() == '0000ffe0-0000-1000-8000-00805f9b34fb');
+  //
+  //       BluetoothCharacteristic chara = service.characteristics.singleWhere((e) => e.uuid.toString() == '0000ffe1-0000-1000-8000-00805f9b34fb');
+  //       try {
+  //         await chara.setNotifyValue(true);
+  //         btdata[device.id.id] = [];
+  //         if (!Subscriptions.keys.contains(device.id.id)) {
+  //           Subscriptions[device!.id.id] = chara.value.listen((event) {
+  //             if (event.isNotEmpty) {
+  //               setState(() {
+  //                 btdata[device!.id.id]!.insert(0, event);
+  //               });
+  //             }
+  //           });
+  //         }
+  //       } catch (e) {}
+  //     });
+  //   }
+  // }
 }
 
 class subscriptiondata {
