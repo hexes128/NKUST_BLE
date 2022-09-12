@@ -20,7 +20,7 @@ class terminalstate extends State<terminal> with TickerProviderStateMixin {
   BluetoothDevice? device;
 
   Map<String, StreamSubscription> Subscriptions = {};
-  Map<String, List<List<int>>> btdata = {};
+  Map<String, List<btdata>> btdataList = {};
 
 
 
@@ -84,8 +84,8 @@ class terminalstate extends State<terminal> with TickerProviderStateMixin {
                                 }
                               case (BluetoothDeviceState.disconnected):
                                 {
-                                  if(btdata.keys.contains(device!.id.id)){
-                                    btdata.remove(device!.id.id);
+                                  if(btdataList.keys.contains(device!.id.id)){
+                                    btdataList.remove(device!.id.id);
                                     Subscriptions[device!.id.id]!.cancel();
                                     Subscriptions.remove(device!.id.id);
                                   }
@@ -104,40 +104,20 @@ class terminalstate extends State<terminal> with TickerProviderStateMixin {
                                   title: Text(device!.name +
                                       '${snapstate.data.toString().split('.')[1]}.'),
                                   subtitle: Text('${device!.id}'),
-                                  trailing: snapstate.data ==
-                                      BluetoothDeviceState.connected
-                                      ? TextButton(
-                                      onPressed: () async {
-                                        await device!.disconnect();
-                                        setState(() {});
-                                      },
-                                      child: const Text('中斷連線'))
-                                      : TextButton(
-                                      onPressed: () async {
-                                        await device!.connect();
-                                      },
-                                      child: const Text('重新連線'))),
-                              btdata.keys.contains(device!.id.id)
+                            ),
+                              btdataList.keys.contains(device!.id.id)
                                   ? SingleChildScrollView(
                                 child: SizedBox(
                                   height: 700,
                                   child: ListView(
                                     shrinkWrap: true,
                                     children:
-                                    btdata[device!.id.id]!.map((e) {
+                                    btdataList[device!.id.id]!.map((e) {
                                       return Card(
                                         child: ListTile(
-                                          title: Text('$e'),
-                                          trailing: IconButton(
-                                            icon: Icon(Icons.delete,
-                                                color: Theme.of(context)
-                                                    .iconTheme
-                                                    .color
-                                                    ?.withOpacity(0.5)),
-                                            onPressed: () {
-                                              setState(() {});
-                                            },
-                                          ),
+                                          title: Text('${e.receivedata}'+'\n'+latin1.decode( e.receivedata).trim()),
+                                          subtitle: Text(e.receivetime),
+
                                         ),
                                       );
                                     }).toList(),
@@ -211,7 +191,7 @@ class terminalstate extends State<terminal> with TickerProviderStateMixin {
 
   Future<void> discoverservice(BluetoothDevice? device) async {
 
-    if (!btdata.keys.contains(device!.id.id)) {
+    if (!btdataList.keys.contains(device!.id.id)) {
       await device!.discoverServices().then((servicelist) async {
         BluetoothService service = servicelist.singleWhere(
                 (e) => e.uuid.toString() == '0000ffe0-0000-1000-8000-00805f9b34fb');
@@ -220,12 +200,12 @@ class terminalstate extends State<terminal> with TickerProviderStateMixin {
                 (e) => e.uuid.toString() == '0000ffe1-0000-1000-8000-00805f9b34fb');
         try {
           await chara.setNotifyValue(true);
-          btdata[device.id.id] = [];
+          btdataList[device.id.id] = [];
           if (!Subscriptions.keys.contains(device.id.id)) {
             Subscriptions[device!.id.id] = chara.value.listen((event) {
               if (event.isNotEmpty) {
                 setState(() {
-                  btdata[device!.id.id]!.insert(0, event);
+                  btdataList[device!.id.id]!.insert(0,btdata(event) );
                 });
               }
             });
